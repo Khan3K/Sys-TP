@@ -8,6 +8,9 @@ function toast(msg, err) {
     clearTimeout(t._t); t._t = setTimeout(function() { t.className = 'toast'; }, 3000);
 }
 
+/* Alert state tracking */
+var cpuAlert = false, ramAlert = false, diskAlert = false, tempAlert = false;
+
 /* ===== RING CHART HELPER ===== */
 var CIRC = 2 * Math.PI * 34;
 function setRing(id, pct, color) {
@@ -31,6 +34,7 @@ function loadStats() {
         $('cpu-freq').textContent = cpu.freq;
         $('cpu-load').textContent = cpu.load1 + ' / ' + cpu.load5 + ' / ' + cpu.load15;
         $('cpu-procs').textContent = cpu.procs;
+        if (cpu.usage >= 90 && !cpuAlert) { toast('CPU usage high: ' + cpu.usage + '%', true); cpuAlert = true; } else if (cpu.usage < 90) { cpuAlert = false; }
 
         var ram = d.ram;
         setRing('ram-ring', ram.usage);
@@ -39,6 +43,7 @@ function loadStats() {
         $('ram-total').textContent = ram.total + ' GB';
         $('ram-free').textContent = ram.free + ' GB';
         $('ram-swap').textContent = ram.swap_used + ' / ' + ram.swap_total + ' GB';
+        if (ram.usage >= 90 && !ramAlert) { toast('RAM usage high: ' + ram.usage + '%', true); ramAlert = true; } else if (ram.usage < 90) { ramAlert = false; }
 
         var temp = d.temp;
         var tempPct = Math.min(temp.max, 100);
@@ -54,6 +59,7 @@ function loadStats() {
             sensorHtml = 'No sensors';
         }
         $('temp-sensors').innerHTML = sensorHtml;
+        if (temp.max >= 80 && !tempAlert) { toast('Temperature high: ' + temp.max + '°C', true); tempAlert = true; } else if (temp.max < 80) { tempAlert = false; }
 
         var bat = d.battery;
         if (bat.percent < 0) {
@@ -73,6 +79,7 @@ function loadStats() {
         $('disk-fill').style.width = disk.usage + '%';
         $('disk-pct').textContent = disk.usage + '%';
         $('disk-detail').textContent = disk.used + ' / ' + disk.total + ' (' + disk.free + ' free) ' + disk.mount;
+        if (disk.usage >= 90 && !diskAlert) { toast('Disk usage high: ' + disk.usage + '%', true); diskAlert = true; } else if (disk.usage < 90) { diskAlert = false; }
 
     }).catch(function(e) { console.error('Stats:', e); });
 }
