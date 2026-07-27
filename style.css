@@ -112,7 +112,10 @@ td input[type=checkbox]{accent-color:var(--acc);width:14px;height:14px;cursor:po
 .note-section button { align-self:flex-start; }
 .note-controls { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
 /* Individual notes styling */
-.note-item { margin:12px 0; padding:10px; background:var(--bg); border:1px solid var(--bdr); border-radius:6px; }
+ .note-item { margin:12px 0; padding:10px; background:var(--bg); border:1px solid var(--bdr); border-radius:6px; }
+.note-item.collapsed .note-text { max-height: 2rem; overflow: hidden; }
+.note-item.expanded .note-text { max-height: none; overflow: visible; }
+.note-header { cursor: pointer; background: var(--bdr); padding: 4px; margin-bottom: 6px; font-weight: 600; border-radius: 4px; }
  .note-item textarea.note-text { width:100%; min-height:80px; height:auto; margin-bottom:8px; background:var(--bg); color:var(--txt); border:1px solid var(--bdr); border-radius:4px; padding:6px; font-family:monospace; font-size:.9rem; resize:vertical; }
 .note-images { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
 .note-image-wrapper { display:flex; flex-direction:column; align-items:center; }

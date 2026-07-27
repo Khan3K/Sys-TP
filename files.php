@@ -59,7 +59,7 @@ switch ($action) {
         $entries = @scandir($real);
         if ($entries) {
             foreach ($entries as $e) {
-                if ($e === '.' || $e === '..') continue;
+                if ($e === '.' || $e === '..' || $e[0] === '.') continue;
                 $fp = $real . '/' . $e;
                 $items[] = fileInfo($fp);
             }
