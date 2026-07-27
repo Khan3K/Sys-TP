@@ -128,4 +128,4 @@ post_max_size = 40M
 
 ## License
 
-Personal use project. No license specified.
+Personal use project and No license specified.
