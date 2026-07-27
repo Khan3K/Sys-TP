@@ -146,6 +146,188 @@
 </div>
 
 <div id="toast" class="toast"></div>
+<div class="note-section">
+  <div class="note-controls">
+  <button id="add-note" class="go-btn">Add Note</button>
+  <button id="export-notes" class="go-btn">Export</button>
+  <button id="import-notes" class="go-btn">Import</button>
+  <button id="clear-notes" class="go-btn">Clear All</button>
+</div>
+  <div id="notes-list"></div>
+</div>
+<script>
+// Utility functions for notes
+async function loadNotes() {
+  try {
+    const resp = await fetch('notes.php?action=load');
+    if (!resp.ok) throw new Error('Network error');
+    const data = await resp.json();
+    return data;
+  } catch (e) {
+    toast('Failed to load notes', true);
+    return [];
+  }
+}
+async function saveNotes(notes) {
+  try {
+    const resp = await fetch('notes.php?action=save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(notes)
+    });
+    if (!resp.ok) throw new Error('Network error');
+    toast('Notes saved');
+  } catch (e) {
+    toast('Failed to save notes', true);
+  }
+}
+function renderNotes() {
+  const notes = loadNotes();
+  const list = document.getElementById('notes-list');
+  list.innerHTML = '';
+  notes.forEach((note, idx) => {
+    const noteDiv = document.createElement('div');
+    noteDiv.className = 'note-item';
+    // Text area
+    const ta = document.createElement('textarea');
+    ta.className = 'note-text';
+    ta.placeholder = 'Enter your note...';
+    ta.value = note.text || '';
+    ta.addEventListener('input', () => {
+      notes[idx].text = ta.value;
+      saveNotes(notes);
+    });
+    noteDiv.appendChild(ta);
+    // Images container
+    const imgContainer = document.createElement('div');
+    imgContainer.className = 'note-images';
+    (note.images || []).forEach((src, imgIdx) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'note-image-wrapper';
+      const img = document.createElement('img');
+      img.src = src;
+      img.className = 'note-image';
+      wrap.appendChild(img);
+      const copyImg = document.createElement('button');
+      copyImg.className = 'go-btn';
+      copyImg.textContent = 'Copy Image';
+      copyImg.addEventListener('click', () => {
+        navigator.clipboard.writeText(src).then(() => toast('Image copied'), () => toast('Copy failed', true));
+      });
+      wrap.appendChild(copyImg);
+      const delImg = document.createElement('button');
+      delImg.className = 'go-btn';
+      delImg.textContent = 'Delete Image';
+      delImg.addEventListener('click', () => {
+        notes[idx].images.splice(imgIdx, 1);
+        saveNotes(notes);
+        renderNotes();
+      });
+      wrap.appendChild(delImg);
+      imgContainer.appendChild(wrap);
+    });
+    noteDiv.appendChild(imgContainer);
+    // Image upload input
+    const imgInput = document.createElement('input');
+    imgInput.type = 'file';
+    imgInput.accept = 'image/*';
+    imgInput.multiple = true;
+    imgInput.addEventListener('change', function () {
+      const files = Array.from(this.files);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          notes[idx].images = notes[idx].images || [];
+          notes[idx].images.push(e.target.result);
+          saveNotes(notes);
+          renderNotes();
+        };
+        reader.readAsDataURL(file);
+      });
+      this.value = '';
+    });
+    noteDiv.appendChild(imgInput);
+    // Action buttons
+    const btnRow = document.createElement('div');
+    btnRow.className = 'note-buttons';
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'go-btn';
+    copyBtn.textContent = 'Copy Text';
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(ta.value).then(() => toast('Note copied'), () => toast('Copy failed', true));
+    });
+    btnRow.appendChild(copyBtn);
+    const delBtn = document.createElement('button');
+    delBtn.className = 'go-btn';
+    delBtn.textContent = 'Delete Note';
+    delBtn.addEventListener('click', () => {
+      notes.splice(idx, 1);
+      saveNotes(notes);
+      renderNotes();
+    });
+    btnRow.appendChild(delBtn);
+    noteDiv.appendChild(btnRow);
+    list.appendChild(noteDiv);
+  });
+}
+// Add note handler
+document.getElementById('add-note').addEventListener('click', () => {
+  const notes = loadNotes();
+  notes.push({text:'', images:[]});
+  saveNotes(notes);
+  renderNotes();
+});
+// Export notes
+function exportNotes() {
+  const notes = loadNotes();
+  const data = JSON.stringify(notes, null, 2);
+  const blob = new Blob([data], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'notes.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+document.getElementById('export-notes').addEventListener('click', exportNotes);
+// Import notes
+function importNotes() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (Array.isArray(data)) {
+          saveNotes(data);
+          renderNotes();
+          toast('Notes imported');
+        } else {
+          toast('Invalid file format', true);
+        }
+      } catch (err) {
+        toast('Import failed', true);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+document.getElementById('import-notes').addEventListener('click', importNotes);
+// Clear all notes
+document.getElementById('clear-notes').addEventListener('click', () => {
+  if (!confirm('Delete all notes?')) return;
+  localStorage.removeItem('user_notes');
+  renderNotes();
+  toast('All notes cleared');
+});
+// Initial render
+renderNotes();
+</script>
 
 <script src="app.js?v=5"></script>
 </body>
